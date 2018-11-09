@@ -21,17 +21,6 @@ using HigherLogics.Google.Datastore;
 
 namespace GoogleCloudSamples.Models
 {
-    public static class DatastoreBookStoreExtensionMethods
-    {
-        /// <summary>
-        /// Make a datastore key given a book's id.
-        /// </summary>
-        /// <param name="id">A book's id.</param>
-        /// <returns>A datastore key.</returns>
-        public static Key ToKey(this long id) =>
-            new Key().WithElement("Book", id);
-    }
-
     public class DatastoreBookStore : IBookStore
     {
         private readonly string _projectId;
@@ -62,7 +51,7 @@ namespace GoogleCloudSamples.Models
 
         public void Delete(long id)
         {
-            _db.Delete(id.ToKey());
+            _db.Delete(id.ToKey<Book>());
         }
 
         // [START list]
@@ -84,7 +73,7 @@ namespace GoogleCloudSamples.Models
 
         public Book Read(long id)
         {
-            return _db.Lookup<Book>(id.ToKey());
+            return _db.Lookup<Book>(id.ToKey<Book>());
         }
 
         public void Update(Book book)
