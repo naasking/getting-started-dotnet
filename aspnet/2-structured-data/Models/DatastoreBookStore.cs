@@ -28,7 +28,6 @@ namespace GoogleCloudSamples.Models
 
         const string emulatorHost = "localhost";
         const int emulatorPort = 8081;
-        //const string projectId = "mappertests";
         const string namespaceId = "";
 
         /// <summary>
