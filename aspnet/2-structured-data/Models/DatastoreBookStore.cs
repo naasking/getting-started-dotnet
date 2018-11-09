@@ -16,6 +16,7 @@ using Google.Cloud.Datastore.V1;
 using Google.Protobuf;
 using System;
 using System.Linq;
+using Grpc.Core;
 
 namespace GoogleCloudSamples.Models
 {
@@ -76,6 +77,11 @@ namespace GoogleCloudSamples.Models
         private readonly string _projectId;
         private readonly DatastoreDb _db;
 
+        const string emulatorHost = "localhost";
+        const int emulatorPort = 8081;
+        //const string projectId = "mappertests";
+        const string namespaceId = "";
+
         /// <summary>
         /// Create a new datastore-backed bookstore.
         /// </summary>
@@ -83,7 +89,8 @@ namespace GoogleCloudSamples.Models
         public DatastoreBookStore(string projectId)
         {
             _projectId = projectId;
-            _db = DatastoreDb.Create(_projectId);
+            var client = DatastoreClient.Create(new Channel(emulatorHost, emulatorPort, ChannelCredentials.Insecure));
+            _db = DatastoreDb.Create(_projectId, namespaceId, client);
         }
 
         // [START create]
