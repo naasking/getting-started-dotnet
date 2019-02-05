@@ -26,6 +26,11 @@ namespace GoogleCloudSamples.Controllers
 
         private readonly IBookStore _store;
 
+        public BooksController()
+        {
+
+        }
+
         public BooksController(IBookStore store)
         {
             _store = store;

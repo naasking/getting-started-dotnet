@@ -12,7 +12,8 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-using Microsoft.Practices.Unity.Mvc;
+using Unity;
+using Unity.AspNet.Mvc;
 using System.Linq;
 using System.Web.Mvc;
 
