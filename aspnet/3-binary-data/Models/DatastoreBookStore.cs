@@ -16,65 +16,19 @@ using Google.Cloud.Datastore.V1;
 using Google.Protobuf;
 using System;
 using System.Linq;
+using Grpc.Core;
+using HigherLogics.Google.Datastore;
 
 namespace GoogleCloudSamples.Models
 {
-    public static class DatastoreBookStoreExtensionMethods
-    {
-        /// <summary>
-        /// Make a datastore key given a book's id.
-        /// </summary>
-        /// <param name="id">A book's id.</param>
-        /// <returns>A datastore key.</returns>
-        public static Key ToKey(this long id) =>
-            new Key().WithElement("Book", id);
-
-        /// <summary>
-        /// Make a book id given a datastore key.
-        /// </summary>
-        /// <param name="key">A datastore key</param>
-        /// <returns>A book id.</returns>
-        public static long ToId(this Key key) => key.Path.First().Id;
-
-        /// <summary>
-        /// Create a datastore entity with the same values as book.
-        /// </summary>
-        /// <param name="book">The book to store in datastore.</param>
-        /// <returns>A datastore entity.</returns>
-        /// [START toentity]
-        public static Entity ToEntity(this Book book) => new Entity()
-        {
-            Key = book.Id.ToKey(),
-            ["Title"] = book.Title,
-            ["Author"] = book.Author,
-            ["PublishedDate"] = book.PublishedDate?.ToUniversalTime(),
-            ["ImageUrl"] = book.ImageUrl,
-            ["Description"] = book.Description,
-            ["CreateById"] = book.CreatedById
-        };
-        // [END toentity]
-
-        /// <summary>
-        /// Unpack a book from a datastore entity.
-        /// </summary>
-        /// <param name="entity">An entity retrieved from datastore.</param>
-        /// <returns>A book.</returns>
-        public static Book ToBook(this Entity entity) => new Book()
-        {
-            Id = entity.Key.Path.First().Id,
-            Title = (string)entity["Title"],
-            Author = (string)entity["Author"],
-            PublishedDate = (DateTime?)entity["PublishedDate"],
-            ImageUrl = (string)entity["ImageUrl"],
-            Description = (string)entity["Description"],
-            CreatedById = (string)entity["CreatedById"]
-        };
-    }
-
     public class DatastoreBookStore : IBookStore
     {
         private readonly string _projectId;
         private readonly DatastoreDb _db;
+
+        const string emulatorHost = "localhost";
+        const int emulatorPort = 8081;
+        const string namespaceId = "";
 
         /// <summary>
         /// Create a new datastore-backed bookstore.
@@ -83,34 +37,32 @@ namespace GoogleCloudSamples.Models
         public DatastoreBookStore(string projectId)
         {
             _projectId = projectId;
-            _db = DatastoreDb.Create(_projectId);
+            var client = DatastoreClient.Create(new Channel(emulatorHost, emulatorPort, ChannelCredentials.Insecure));
+            _db = DatastoreDb.Create(_projectId, namespaceId, client);
         }
 
         // [START create]
         public void Create(Book book)
         {
-            var entity = book.ToEntity();
-            entity.Key = _db.CreateKeyFactory("Book").CreateIncompleteKey();
-            var keys = _db.Insert(new[] { entity });
-            book.Id = keys.First().Path.First().Id;
+            _db.Insert(book);
         }
         // [END create]
 
         public void Delete(long id)
         {
-            _db.Delete(id.ToKey());
+            _db.Delete(id.ToKey<Book>());
         }
 
         // [START list]
         public BookList List(int pageSize, string nextPageToken)
         {
-            var query = new Query("Book") { Limit = pageSize };
+            var query = new Query(Mapper.Kind<Book>()) { Limit = pageSize };
             if (!string.IsNullOrWhiteSpace(nextPageToken))
                 query.StartCursor = ByteString.FromBase64(nextPageToken);
             var results = _db.RunQuery(query);
             return new BookList()
             {
-                Books = results.Entities.Select(entity => entity.ToBook()),
+                Books = results.Entities<Book>(),
                 NextPageToken = results.Entities.Count == query.Limit ?
                     results.EndCursor.ToBase64() : null
             };
@@ -119,12 +71,12 @@ namespace GoogleCloudSamples.Models
 
         public Book Read(long id)
         {
-            return _db.Lookup(id.ToKey())?.ToBook();
+            return _db.Lookup<Book>(id.ToKey<Book>());
         }
 
         public void Update(Book book)
         {
-            _db.Update(book.ToEntity());
+            _db.Update(book);
         }
     }
 }
