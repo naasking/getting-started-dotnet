@@ -14,7 +14,6 @@
 
 using GoogleCloudSamples.Models;
 using GoogleCloudSamples.Services;
-//using Microsoft.Practices.Unity;
 using Unity;
 using System;
 using System.Configuration;
